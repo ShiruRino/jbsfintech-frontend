@@ -21,7 +21,8 @@ void main() {
   testWidgets('Login validation appears for empty fields', (tester) async {
     await tester.pumpWidget(wrapWithMaterialApp(const LoginScreen()));
 
-    await tester.tap(find.text('Masuk'));
+    await tester.ensureVisible(find.widgetWithText(FilledButton, 'Masuk'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Masuk'));
     await tester.pump();
 
     expect(find.text('Email wajib diisi'), findsOneWidget);

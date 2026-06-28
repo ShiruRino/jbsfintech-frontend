@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class AppTheme {
   static const _primary = Color(0xFF0F4C81);
   static const _secondary = Color(0xFF0E9AA7);
-  static const _success = Color(0xFF1B8A5A);
-  static const _danger = Color(0xFFD95D39);
-  static const _surfaceTint = Color(0xFFF4F7FB);
+  static const _success = Color(0xFF12A66A);
+  static const _danger = Color(0xFFE35D5B);
+  static const _surfaceTint = Color(0xFFEFF6F8);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
@@ -39,13 +39,19 @@ class AppTheme {
       colorScheme: scheme,
       brightness: brightness,
       scaffoldBackgroundColor: brightness == Brightness.light
-          ? const Color(0xFFF3F6FB)
-          : const Color(0xFF0B1220),
+          ? const Color(0xFFF5F8FA)
+          : const Color(0xFF07111F),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         foregroundColor: scheme.onSurface,
         elevation: 0,
         centerTitle: false,
+        titleTextStyle: TextStyle(
+          color: scheme.onSurface,
+          fontSize: 22,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0,
+        ),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
@@ -64,15 +70,15 @@ class AppTheme {
             ? Colors.white
             : const Color(0xFF172033),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: scheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: scheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: scheme.primary, width: 1.4),
         ),
       ),
@@ -81,7 +87,8 @@ class AppTheme {
         color: brightness == Brightness.light
             ? Colors.white
             : const Color(0xFF172033),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        shadowColor: const Color(0xFF0F3558).withValues(alpha: 0.08),
       ),
       chipTheme: ChipThemeData(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),

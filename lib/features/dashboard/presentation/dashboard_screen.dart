@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/theme/app_theme.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/async_state_widgets.dart';
+import '../../../core/widgets/brand_logo.dart';
 import '../../shared/providers.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -14,7 +15,9 @@ class DashboardScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final dashboardAsync = ref.watch(dashboardProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Beranda')),
+      appBar: AppBar(
+        title: const JbsFintechWordmark(markSize: 32, textSize: 22),
+      ),
       body: RefreshIndicator(
         onRefresh: () => ref.refresh(dashboardProvider.future),
         child: dashboardAsync.when(
@@ -238,57 +241,114 @@ class _BalanceHeroCard extends StatelessWidget {
     final palette = Theme.of(context).extension<AppPalette>()!;
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ),
-        ),
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Halo, $name',
-              style: Theme.of(
-                context,
-              ).textTheme.titleMedium?.copyWith(color: Colors.white70),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              AppFormatters.currency(totalBalance),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.w800,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Theme.of(context).colorScheme.primary,
+                    const Color(0xFF0B6A88),
+                    Theme.of(context).colorScheme.secondary,
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 18),
-            Row(
+          ),
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _HeroPatternPainter(
+                color: Colors.white.withValues(alpha: 0.16),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: _HeroMetric(
-                    label: 'Pemasukan',
-                    value: AppFormatters.currency(income),
-                    color: palette.success,
+                Text(
+                  'Halo, $name',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleMedium?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  AppFormatters.currency(totalBalance),
+                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _HeroMetric(
-                    label: 'Pengeluaran',
-                    value: AppFormatters.currency(expense),
-                    color: palette.danger,
-                  ),
+                const SizedBox(height: 8),
+                Text(
+                  'Kondisi keuangan Anda hari ini',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(color: Colors.white70),
+                ),
+                const SizedBox(height: 18),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _HeroMetric(
+                        label: 'Pemasukan',
+                        value: AppFormatters.currency(income),
+                        color: palette.success,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _HeroMetric(
+                        label: 'Pengeluaran',
+                        value: AppFormatters.currency(expense),
+                        color: palette.danger,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+}
+
+class _HeroPatternPainter extends CustomPainter {
+  const _HeroPatternPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.4
+      ..strokeCap = StrokeCap.round;
+
+    final center = Offset(size.width * 0.78, size.height * 0.28);
+    canvas.drawCircle(center, size.width * 0.22, paint);
+    canvas.drawCircle(center, size.width * 0.14, paint);
+
+    final arrow = Path()
+      ..moveTo(size.width * 0.58, size.height * 0.72)
+      ..lineTo(size.width * 0.93, size.height * 0.23)
+      ..lineTo(size.width * 0.86, size.height * 0.25)
+      ..moveTo(size.width * 0.93, size.height * 0.23)
+      ..lineTo(size.width * 0.91, size.height * 0.34);
+    canvas.drawPath(arrow, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _HeroPatternPainter oldDelegate) {
+    return oldDelegate.color != color;
   }
 }
 

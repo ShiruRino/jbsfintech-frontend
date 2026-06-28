@@ -72,10 +72,7 @@ class TransactionDetailScreen extends ConsumerWidget {
                         label: 'Catatan',
                         value: transaction.note ?? '-',
                       ),
-                      _DetailRow(
-                        label: 'Lampiran',
-                        value: transaction.attachmentPath ?? '-',
-                      ),
+                      _AttachmentDetail(path: transaction.attachmentPath),
                     ],
                   ),
                 ),
@@ -116,6 +113,84 @@ class TransactionDetailScreen extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+class _AttachmentDetail extends StatelessWidget {
+  const _AttachmentDetail({required this.path});
+
+  final String? path;
+
+  @override
+  Widget build(BuildContext context) {
+    if (path == null || path!.trim().isEmpty) {
+      return const _DetailRow(label: 'Lampiran', value: '-');
+    }
+
+    final isNetworkImage =
+        path!.startsWith('http://') || path!.startsWith('https://');
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Lampiran', style: Theme.of(context).textTheme.bodyMedium),
+          const SizedBox(height: 8),
+          if (isNetworkImage)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.network(
+                  path!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) =>
+                      _AttachmentPathPill(path: path!),
+                ),
+              ),
+            )
+          else
+            _AttachmentPathPill(path: path!),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentPathPill extends StatelessWidget {
+  const _AttachmentPathPill({required this.path});
+
+  final String path;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: scheme.secondary.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: scheme.secondary.withValues(alpha: 0.24)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.image_rounded, color: scheme.secondary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              path,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

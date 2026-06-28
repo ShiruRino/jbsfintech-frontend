@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/utils/debouncer.dart';
 import '../../../core/widgets/async_state_widgets.dart';
-import '../domain/category.dart';
 import '../../shared/providers.dart';
+import 'category_icon_registry.dart';
 
 class CategoriesScreen extends ConsumerStatefulWidget {
   const CategoriesScreen({super.key});
@@ -104,13 +104,17 @@ class _CategoriesScreenState extends ConsumerState<CategoriesScreen> {
                     Card(
                       child: ListTile(
                         leading: CircleAvatar(
-                          child: Text(
-                            categoryIconLabels[category.icon]?[0] ?? 'K',
+                          backgroundColor: Theme.of(
+                            context,
+                          ).colorScheme.primary.withValues(alpha: 0.12),
+                          child: Icon(
+                            categoryIconOptionFor(category.icon).icon,
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
                         title: Text(category.name),
                         subtitle: Text(
-                          '${category.type == 'income' ? 'Pemasukan' : 'Pengeluaran'} • ${category.isActive ? 'Aktif' : 'Nonaktif'}',
+                          '${category.type == 'income' ? 'Pemasukan' : 'Pengeluaran'} - ${category.isActive ? 'Aktif' : 'Nonaktif'}',
                         ),
                         trailing: PopupMenuButton<String>(
                           onSelected: (value) async {

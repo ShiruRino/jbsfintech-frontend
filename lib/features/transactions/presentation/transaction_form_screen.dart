@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/network/api_result.dart';
 import '../../../core/utils/formatters.dart';
@@ -21,11 +24,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
   final _attachmentController = TextEditingController();
+  final _imagePicker = ImagePicker();
 
   String _type = 'expense';
   int? _accountId;
   int? _categoryId;
   DateTime _selectedDate = DateTime.now();
+  Uint8List? _attachmentPreviewBytes;
+  String? _attachmentName;
+  bool _isPickingAttachment = false;
   bool _submitting = false;
   Map<String, List<String>> _fieldErrors = const {};
 
@@ -53,6 +60,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _amountController.text = transaction.amount.toString();
       _noteController.text = transaction.note ?? '';
       _attachmentController.text = transaction.attachmentPath ?? '';
+      _attachmentName = transaction.attachmentPath;
     });
   }
 
@@ -130,6 +138,51 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           context,
         ).showSnackBar(SnackBar(content: Text(error.message)));
     }
+  }
+
+  Future<void> _pickAttachment(ImageSource source) async {
+    setState(() => _isPickingAttachment = true);
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: source,
+        imageQuality: 82,
+        maxWidth: 1600,
+      );
+
+      if (picked == null) {
+        return;
+      }
+
+      final bytes = await picked.readAsBytes();
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _attachmentPreviewBytes = bytes;
+        _attachmentName = picked.name;
+        _attachmentController.text = picked.path;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Gagal memilih gambar: $error')));
+    } finally {
+      if (mounted) {
+        setState(() => _isPickingAttachment = false);
+      }
+    }
+  }
+
+  void _clearAttachment() {
+    setState(() {
+      _attachmentPreviewBytes = null;
+      _attachmentName = null;
+      _attachmentController.clear();
+    });
   }
 
   @override
@@ -256,14 +309,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                   ),
                 ),
                 const SizedBox(height: 16),
-                TextFormField(
+                _AttachmentPickerCard(
                   controller: _attachmentController,
-                  decoration: InputDecoration(
-                    labelText: 'Attachment path',
-                    helperText:
-                        'Opsional. Hanya metadata/path, tanpa upload file.',
-                    errorText: _fieldErrors['attachment_path']?.join(', '),
-                  ),
+                  previewBytes: _attachmentPreviewBytes,
+                  attachmentName: _attachmentName,
+                  isPicking: _isPickingAttachment,
+                  errorText: _fieldErrors['attachment_path']?.join(', '),
+                  onPickGallery: () => _pickAttachment(ImageSource.gallery),
+                  onPickCamera: () => _pickAttachment(ImageSource.camera),
+                  onClear: _clearAttachment,
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -280,6 +334,198 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AttachmentPickerCard extends StatelessWidget {
+  const _AttachmentPickerCard({
+    required this.controller,
+    required this.previewBytes,
+    required this.attachmentName,
+    required this.isPicking,
+    required this.onPickGallery,
+    required this.onPickCamera,
+    required this.onClear,
+    this.errorText,
+  });
+
+  final TextEditingController controller;
+  final Uint8List? previewBytes;
+  final String? attachmentName;
+  final bool isPicking;
+  final VoidCallback onPickGallery;
+  final VoidCallback onPickCamera;
+  final VoidCallback onClear;
+  final String? errorText;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final hasAttachment = controller.text.trim().isNotEmpty;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        color: scheme.surface,
+        border: Border.all(
+          color: errorText == null ? scheme.outlineVariant : scheme.error,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF0F3558).withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: scheme.secondary.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Icon(Icons.image_rounded, color: scheme.secondary),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Lampiran gambar',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Path gambar akan dikirim ke attachment_path.',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              if (hasAttachment)
+                IconButton(
+                  tooltip: 'Hapus lampiran',
+                  onPressed: onClear,
+                  icon: const Icon(Icons.close_rounded),
+                ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: previewBytes == null
+                  ? _AttachmentEmptyPreview(
+                      hasAttachment: hasAttachment,
+                      attachmentName: attachmentName ?? controller.text,
+                    )
+                  : Image.memory(previewBytes!, fit: BoxFit.cover),
+            ),
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: [
+              FilledButton.icon(
+                onPressed: isPicking ? null : onPickGallery,
+                icon: isPicking
+                    ? const SizedBox.square(
+                        dimension: 16,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.photo_library_rounded),
+                label: const Text('Galeri'),
+              ),
+              FilledButton.tonalIcon(
+                onPressed: isPicking ? null : onPickCamera,
+                icon: const Icon(Icons.photo_camera_rounded),
+                label: const Text('Kamera'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: controller,
+            decoration: InputDecoration(
+              labelText: 'attachment_path',
+              helperText: 'Bisa diedit manual jika backend menyimpan URL/path.',
+              errorText: errorText,
+              suffixIcon: const Icon(Icons.link_rounded),
+            ),
+            maxLength: 2048,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AttachmentEmptyPreview extends StatelessWidget {
+  const _AttachmentEmptyPreview({
+    required this.hasAttachment,
+    required this.attachmentName,
+  });
+
+  final bool hasAttachment;
+  final String? attachmentName;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: scheme.primary.withValues(alpha: 0.06),
+        border: Border.all(color: scheme.outlineVariant),
+      ),
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                hasAttachment
+                    ? Icons.insert_photo_rounded
+                    : Icons.add_photo_alternate_rounded,
+                color: scheme.primary,
+                size: 34,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                hasAttachment ? 'Lampiran tersimpan' : 'Belum ada gambar',
+                style: Theme.of(
+                  context,
+                ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              if (attachmentName != null && attachmentName!.isNotEmpty) ...[
+                const SizedBox(height: 4),
+                Text(
+                  attachmentName!,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ],
           ),
         ),
       ),

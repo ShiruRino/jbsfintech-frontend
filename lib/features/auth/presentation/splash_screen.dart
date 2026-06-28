@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/widgets/brand_logo.dart';
 import 'auth_controller.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -26,40 +27,61 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       body: DecoratedBox(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
             colors: [
-              scheme.primary.withValues(alpha: 0.12),
+              scheme.primary.withValues(alpha: 0.16),
               Theme.of(context).scaffoldBackgroundColor,
+              scheme.secondary.withValues(alpha: 0.14),
             ],
           ),
         ),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircleAvatar(
-                radius: 44,
-                backgroundColor: scheme.primaryContainer,
-                child: Text(
-                  'JB',
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.92, end: 1),
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            builder: (context, value, child) => Transform.scale(
+              scale: value,
+              child: Opacity(opacity: value, child: child),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 220,
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: scheme.primary.withValues(alpha: 0.12),
+                        blurRadius: 34,
+                        offset: const Offset(0, 18),
+                      ),
+                    ],
+                  ),
+                  child: const JbsFintechLogo(height: 150),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'jbsfintech',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    color: scheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
+                    color: scheme.primary,
                   ),
                 ),
-              ),
-              const SizedBox(height: 18),
-              Text(
-                'jbsfintech',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: scheme.primary,
+                const SizedBox(height: 22),
+                SizedBox(
+                  width: 120,
+                  child: LinearProgressIndicator(
+                    minHeight: 6,
+                    borderRadius: BorderRadius.circular(99),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 22),
-              const CircularProgressIndicator(),
-            ],
+              ],
+            ),
           ),
         ),
       ),

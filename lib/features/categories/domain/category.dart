@@ -25,12 +25,3 @@ class Category {
     );
   }
 }
-
-const Map<String, String> categoryIconLabels = {
-  'wallet': 'Dompet',
-  'food': 'Makan',
-  'transport': 'Transport',
-  'salary': 'Gaji',
-  'shopping': 'Belanja',
-  'bills': 'Tagihan',
-};

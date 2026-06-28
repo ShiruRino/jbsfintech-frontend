@@ -15,7 +15,7 @@ class JbsFintechApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'JBS Fintech',
+      title: 'jbsfintech',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

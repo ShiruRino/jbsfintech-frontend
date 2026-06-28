@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Jbsfintech</string>
+	<string>jbsfintech</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -51,6 +51,12 @@
 	<true/>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
+	<key>NSCameraUsageDescription</key>
+	<string>jbsfintech membutuhkan kamera untuk menambahkan foto lampiran transaksi.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>jbsfintech membutuhkan akses galeri untuk memilih foto lampiran transaksi.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>jbsfintech dapat menyimpan lampiran gambar jika diperlukan.</string>
 	<key>UIMainStoryboardFile</key>
 	<string>Main</string>
 	<key>UISupportedInterfaceOrientations</key>

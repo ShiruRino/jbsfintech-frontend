@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/api_result.dart';
 import '../../shared/providers.dart';
-import '../domain/category.dart';
+import 'category_icon_registry.dart';
 
 class CategoryFormScreen extends ConsumerStatefulWidget {
   const CategoryFormScreen({super.key, this.categoryId});
@@ -19,7 +19,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   String _type = 'expense';
-  String? _icon = 'wallet';
+  String _icon = categoryIconOptions.first.key;
   bool _isActive = true;
   bool _submitting = false;
   Map<String, List<String>> _fieldErrors = const {};
@@ -43,7 +43,7 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
     setState(() {
       _nameController.text = detail.$1.name;
       _type = detail.$1.type;
-      _icon = detail.$1.icon;
+      _icon = normalizeCategoryIconKey(detail.$1.icon);
       _isActive = detail.$1.isActive;
     });
   }
@@ -138,16 +138,18 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
                       setState(() => _type = selection.first),
                 ),
                 const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  initialValue: _icon,
-                  decoration: const InputDecoration(labelText: 'Ikon'),
-                  items: [
-                    for (final entry in categoryIconLabels.entries)
-                      DropdownMenuItem(
-                        value: entry.key,
-                        child: Text(entry.value),
-                      ),
-                  ],
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'Ikon kategori',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                _IconPickerGrid(
+                  selectedKey: _icon,
                   onChanged: (value) => setState(() => _icon = value),
                 ),
                 const SizedBox(height: 16),
@@ -175,6 +177,72 @@ class _CategoryFormScreenState extends ConsumerState<CategoryFormScreen> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _IconPickerGrid extends StatelessWidget {
+  const _IconPickerGrid({required this.selectedKey, required this.onChanged});
+
+  final String selectedKey;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: categoryIconOptions.length,
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 5,
+        mainAxisSpacing: 10,
+        crossAxisSpacing: 10,
+        childAspectRatio: 0.86,
+      ),
+      itemBuilder: (context, index) {
+        final option = categoryIconOptions[index];
+        final selected = option.key == selectedKey;
+
+        return InkWell(
+          borderRadius: BorderRadius.circular(18),
+          onTap: () => onChanged(option.key),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 6),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              color: selected
+                  ? scheme.primary.withValues(alpha: 0.12)
+                  : scheme.surface,
+              border: Border.all(
+                color: selected ? scheme.primary : scheme.outlineVariant,
+                width: selected ? 1.4 : 1,
+              ),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  option.icon,
+                  color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  option.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: selected ? scheme.primary : scheme.onSurfaceVariant,
+                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

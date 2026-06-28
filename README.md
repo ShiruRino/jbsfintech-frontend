@@ -1,4 +1,4 @@
-# JBS Fintech
+# jbsfintech
 
 A production-ready Flutter mobile app for personal finance management based strictly on the provided OpenAPI contract.
 
@@ -82,6 +82,7 @@ Main choices:
 - `shared_preferences` for non-sensitive UI preferences
 - `intl` for Rupiah and Indonesian date formatting
 - `fl_chart` for dashboard charts
+- `image_picker` for choosing transaction attachment pictures
 - `shimmer` for loading placeholders
 
 ## Commands
@@ -113,12 +114,13 @@ flutter test
 ## API Notes And Limitations
 
 - No undocumented endpoints were implemented.
-- No registration, forgot password, upload, pagination, filtering query params, analytics, or reports were added.
+- No registration, forgot password, pagination, filtering query params, analytics, or reports were added.
 - Transaction list filtering and sorting are local in the app because the API contract does not document server-side query support.
 - Login parsing supports both documented and actual observed backend shapes:
   - documented fallback: `data` as token string
   - observed runtime shape: `data.token` and `data.user`
-- `attachment_path` is treated as metadata/path only. No upload flow is implemented.
+- `attachment_path` remains a string per the API contract. The app lets users pick a picture, previews it, and sends the selected image path/string in `attachment_path`.
+- Category `icon` is stored as a Flutter icon string key, for example `restaurant_rounded` or `account_balance_wallet_rounded`.
 - Numeric and boolean fields are parsed defensively because API responses may vary in type.
 
 ## Testing Coverage
