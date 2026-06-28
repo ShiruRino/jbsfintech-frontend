@@ -1,0 +1,30 @@
+name: jbsfintech
+description: "Personal finance mobile app for JBS Fintech."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  connectivity_plus: ^7.0.0
+  cupertino_icons: ^1.0.8
+  dio: ^5.9.0
+  fl_chart: ^1.1.1
+  flutter_riverpod: ^3.0.3
+  flutter_secure_storage: ^9.2.4
+  go_router: ^16.2.1
+  intl: ^0.20.2
+  shared_preferences: ^2.5.3
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_lints: ^6.0.0
+  flutter_test:
+    sdk: flutter
+  mocktail: ^1.0.4
+
+flutter:
+  uses-material-design: true
