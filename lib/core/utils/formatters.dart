@@ -5,12 +5,12 @@ class AppFormatters {
 
   static final NumberFormat _currencyFormatter = NumberFormat.currency(
     locale: 'id_ID',
-    symbol: 'Rp',
+    symbol: 'Rp ',
     decimalDigits: 0,
   );
 
   static final DateFormat _displayDateFormatter = DateFormat(
-    'dd MMM yyyy',
+    'dd MMMM yyyy',
     'id_ID',
   );
   static final DateFormat _apiDateFormatter = DateFormat('yyyy-MM-dd');

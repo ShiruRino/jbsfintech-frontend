@@ -12,6 +12,7 @@ class TransactionItem {
     required this.transactionDate,
     this.note,
     this.attachmentPath,
+    this.attachmentUrl,
   });
 
   final int id;
@@ -22,6 +23,7 @@ class TransactionItem {
   final DateTime? transactionDate;
   final String? note;
   final String? attachmentPath;
+  final String? attachmentUrl;
 
   factory TransactionItem.fromJson(Map<String, dynamic> json) {
     final accountJson = JsonParsers.asMap(json['account']);
@@ -36,6 +38,7 @@ class TransactionItem {
       transactionDate: JsonParsers.toDateTime(json['transaction_date']),
       note: json['note']?.toString(),
       attachmentPath: json['attachment_path']?.toString(),
+      attachmentUrl: json['attachment_url']?.toString(),
     );
   }
 }

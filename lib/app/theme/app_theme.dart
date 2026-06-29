@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const _primary = Color(0xFF0F4C81);
-  static const _secondary = Color(0xFF0E9AA7);
-  static const _success = Color(0xFF12A66A);
-  static const _danger = Color(0xFFE35D5B);
-  static const _surfaceTint = Color(0xFFEFF6F8);
+  static const _primary = Color(0xFF000613);
+  static const _primaryContainer = Color(0xFF001F3F);
+  static const _secondary = Color(0xFF006C49);
+  static const _success = Color(0xFF006C49);
+  static const _danger = Color(0xFFBA1A1A);
+  static const _surfaceTint = Color(0xFFF7F9FC);
 
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: _primary,
       primary: _primary,
       secondary: _secondary,
+      primaryContainer: _primaryContainer,
       brightness: Brightness.light,
       surface: Colors.white,
       error: _danger,
@@ -23,8 +26,8 @@ class AppTheme {
   static ThemeData dark() {
     final scheme = ColorScheme.fromSeed(
       seedColor: _primary,
-      primary: const Color(0xFF7BB3F3),
-      secondary: const Color(0xFF58D0D9),
+      primary: const Color(0xFFD4E3FF),
+      secondary: const Color(0xFF4EDEA3),
       brightness: Brightness.dark,
       surface: const Color(0xFF111827),
       error: const Color(0xFFFF8B74),
@@ -39,7 +42,7 @@ class AppTheme {
       colorScheme: scheme,
       brightness: brightness,
       scaffoldBackgroundColor: brightness == Brightness.light
-          ? const Color(0xFFF5F8FA)
+          ? const Color(0xFFF7F9FC)
           : const Color(0xFF07111F),
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
@@ -70,15 +73,15 @@ class AppTheme {
             ? Colors.white
             : const Color(0xFF172033),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF64748B)),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: scheme.outlineVariant),
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: Color(0xFF64748B)),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide(color: scheme.primary, width: 1.4),
         ),
       ),
@@ -94,13 +97,26 @@ class AppTheme {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(100)),
         side: BorderSide.none,
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: _primary,
+          foregroundColor: Colors.white,
+          shape: const StadiumBorder(),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: _primary,
+        foregroundColor: Colors.white,
         shape: StadiumBorder(),
       ),
     );
+    final jakartaTextTheme = GoogleFonts.plusJakartaSansTextTheme(
+      base.textTheme,
+    );
 
     return base.copyWith(
-      textTheme: base.textTheme.apply(
+      textTheme: jakartaTextTheme.apply(
         bodyColor: scheme.onSurface,
         displayColor: scheme.onSurface,
       ),

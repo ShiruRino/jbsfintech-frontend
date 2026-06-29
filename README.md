@@ -119,7 +119,9 @@ flutter test
 - Login parsing supports both documented and actual observed backend shapes:
   - documented fallback: `data` as token string
   - observed runtime shape: `data.token` and `data.user`
-- `attachment_path` remains a string per the API contract. The app lets users pick a picture, previews it, and sends the selected image path/string in `attachment_path`.
+- Transaction attachments are uploaded as `multipart/form-data` using the binary file field `attachment`. The app never sends `attachment_path`; that field is treated as response-only.
+- Transaction updates with attachments use Laravel-compatible method spoofing: `POST /transactions/{id}` with `_method=PUT`.
+- Existing transaction pictures use `attachment_url` when present, with a storage URL fallback derived from `attachment_path`.
 - Category `icon` is stored as a Flutter icon string key, for example `restaurant_rounded` or `account_balance_wallet_rounded`.
 - Numeric and boolean fields are parsed defensively because API responses may vary in type.
 

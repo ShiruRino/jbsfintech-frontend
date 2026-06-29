@@ -5,9 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/network/api_result.dart';
 import '../../../core/utils/formatters.dart';
 import '../../shared/providers.dart';
+import '../domain/transaction_attachment.dart';
 
 class TransactionFormScreen extends ConsumerStatefulWidget {
   const TransactionFormScreen({super.key, this.transactionId});
@@ -23,7 +25,6 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountController = TextEditingController();
   final _noteController = TextEditingController();
-  final _attachmentController = TextEditingController();
   final _imagePicker = ImagePicker();
 
   String _type = 'expense';
@@ -32,6 +33,10 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   DateTime _selectedDate = DateTime.now();
   Uint8List? _attachmentPreviewBytes;
   String? _attachmentName;
+  String? _existingAttachmentPath;
+  TransactionAttachmentFile? _selectedAttachment;
+  bool _removeExistingAttachment = false;
+  String? _attachmentError;
   bool _isPickingAttachment = false;
   bool _submitting = false;
   Map<String, List<String>> _fieldErrors = const {};
@@ -59,8 +64,9 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       _selectedDate = transaction.transactionDate ?? DateTime.now();
       _amountController.text = transaction.amount.toString();
       _noteController.text = transaction.note ?? '';
-      _attachmentController.text = transaction.attachmentPath ?? '';
-      _attachmentName = transaction.attachmentPath;
+      _existingAttachmentPath =
+          transaction.attachmentUrl ?? transaction.attachmentPath;
+      _attachmentName = _existingAttachmentPath;
     });
   }
 
@@ -68,12 +74,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
   void dispose() {
     _amountController.dispose();
     _noteController.dispose();
-    _attachmentController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    if (_attachmentError != null) {
       return;
     }
 
@@ -96,9 +104,7 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
-          attachmentPath: _attachmentController.text.trim().isEmpty
-              ? null
-              : _attachmentController.text.trim(),
+          attachment: _selectedAttachment,
         );
       } else {
         await repo.updateTransaction(
@@ -111,9 +117,8 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
           note: _noteController.text.trim().isEmpty
               ? null
               : _noteController.text.trim(),
-          attachmentPath: _attachmentController.text.trim().isEmpty
-              ? null
-              : _attachmentController.text.trim(),
+          attachment: _selectedAttachment,
+          removeAttachment: _removeExistingAttachment,
         );
       }
     });
@@ -153,6 +158,24 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
         return;
       }
 
+      final mimeType = TransactionAttachmentFile.mimeTypeFromFilename(
+        picked.name,
+      );
+      if (mimeType == null) {
+        setState(() {
+          _attachmentError = 'Format file harus JPG, JPEG, atau PNG.';
+        });
+        return;
+      }
+
+      final sizeBytes = await picked.length();
+      if (sizeBytes > TransactionAttachmentFile.maxSizeBytes) {
+        setState(() {
+          _attachmentError = 'Ukuran foto maksimal 5 MB.';
+        });
+        return;
+      }
+
       final bytes = await picked.readAsBytes();
       if (!mounted) {
         return;
@@ -161,7 +184,14 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
       setState(() {
         _attachmentPreviewBytes = bytes;
         _attachmentName = picked.name;
-        _attachmentController.text = picked.path;
+        _selectedAttachment = TransactionAttachmentFile(
+          path: picked.path,
+          filename: _safeFilename(picked.name),
+          sizeBytes: sizeBytes,
+          mimeType: mimeType,
+        );
+        _removeExistingAttachment = false;
+        _attachmentError = null;
       });
     } catch (error) {
       if (!mounted) {
@@ -181,8 +211,17 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
     setState(() {
       _attachmentPreviewBytes = null;
       _attachmentName = null;
-      _attachmentController.clear();
+      _selectedAttachment = null;
+      _attachmentError = null;
+      if (_existingAttachmentPath != null) {
+        _removeExistingAttachment = true;
+      }
     });
+  }
+
+  String _safeFilename(String filename) {
+    final sanitized = filename.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    return sanitized.isEmpty ? 'attachment.jpg' : sanitized;
   }
 
   @override
@@ -310,11 +349,15 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
                 ),
                 const SizedBox(height: 16),
                 _AttachmentPickerCard(
-                  controller: _attachmentController,
                   previewBytes: _attachmentPreviewBytes,
                   attachmentName: _attachmentName,
+                  selectedAttachment: _selectedAttachment,
+                  existingAttachmentPath: _existingAttachmentPath,
+                  removeExistingAttachment: _removeExistingAttachment,
                   isPicking: _isPickingAttachment,
-                  errorText: _fieldErrors['attachment_path']?.join(', '),
+                  errorText:
+                      _attachmentError ??
+                      _fieldErrors['attachment']?.join(', '),
                   onPickGallery: () => _pickAttachment(ImageSource.gallery),
                   onPickCamera: () => _pickAttachment(ImageSource.camera),
                   onClear: _clearAttachment,
@@ -343,9 +386,11 @@ class _TransactionFormScreenState extends ConsumerState<TransactionFormScreen> {
 
 class _AttachmentPickerCard extends StatelessWidget {
   const _AttachmentPickerCard({
-    required this.controller,
     required this.previewBytes,
     required this.attachmentName,
+    required this.selectedAttachment,
+    required this.existingAttachmentPath,
+    required this.removeExistingAttachment,
     required this.isPicking,
     required this.onPickGallery,
     required this.onPickCamera,
@@ -353,9 +398,11 @@ class _AttachmentPickerCard extends StatelessWidget {
     this.errorText,
   });
 
-  final TextEditingController controller;
   final Uint8List? previewBytes;
   final String? attachmentName;
+  final TransactionAttachmentFile? selectedAttachment;
+  final String? existingAttachmentPath;
+  final bool removeExistingAttachment;
   final bool isPicking;
   final VoidCallback onPickGallery;
   final VoidCallback onPickCamera;
@@ -365,7 +412,12 @@ class _AttachmentPickerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final hasAttachment = controller.text.trim().isNotEmpty;
+    final hasAttachment =
+        selectedAttachment != null ||
+        (existingAttachmentPath != null && !removeExistingAttachment);
+    final existingPreviewUrl = AppConfig.resolveStorageUrl(
+      existingAttachmentPath,
+    );
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
@@ -411,7 +463,7 @@ class _AttachmentPickerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      'Path gambar akan dikirim ke attachment_path.',
+                      'Upload JPG/PNG asli ke field attachment.',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
@@ -430,12 +482,27 @@ class _AttachmentPickerCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             child: AspectRatio(
               aspectRatio: 16 / 9,
-              child: previewBytes == null
-                  ? _AttachmentEmptyPreview(
-                      hasAttachment: hasAttachment,
-                      attachmentName: attachmentName ?? controller.text,
+              child: previewBytes != null
+                  ? Image.memory(previewBytes!, fit: BoxFit.cover)
+                  : existingPreviewUrl != null &&
+                        hasAttachment &&
+                        !removeExistingAttachment
+                  ? Image.network(
+                      existingPreviewUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) =>
+                          _AttachmentEmptyPreview(
+                            hasAttachment: hasAttachment,
+                            attachmentName:
+                                attachmentName ?? existingAttachmentPath,
+                            removed: removeExistingAttachment,
+                          ),
                     )
-                  : Image.memory(previewBytes!, fit: BoxFit.cover),
+                  : _AttachmentEmptyPreview(
+                      hasAttachment: hasAttachment,
+                      attachmentName: attachmentName ?? existingAttachmentPath,
+                      removed: removeExistingAttachment,
+                    ),
             ),
           ),
           const SizedBox(height: 14),
@@ -461,16 +528,35 @@ class _AttachmentPickerCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          TextFormField(
-            controller: controller,
-            decoration: InputDecoration(
-              labelText: 'attachment_path',
-              helperText: 'Bisa diedit manual jika backend menyimpan URL/path.',
-              errorText: errorText,
-              suffixIcon: const Icon(Icons.link_rounded),
+          if (selectedAttachment != null)
+            Text(
+              '${selectedAttachment!.filename} - ${TransactionAttachmentFile.formatSize(selectedAttachment!.sizeBytes)}',
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w700),
+            )
+          else if (hasAttachment)
+            Text(
+              existingAttachmentPath!,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            )
+          else
+            Text(
+              'Belum ada bukti transaksi.',
+              style: Theme.of(context).textTheme.bodySmall,
             ),
-            maxLength: 2048,
-          ),
+          if (errorText != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              errorText!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: scheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -481,10 +567,12 @@ class _AttachmentEmptyPreview extends StatelessWidget {
   const _AttachmentEmptyPreview({
     required this.hasAttachment,
     required this.attachmentName,
+    required this.removed,
   });
 
   final bool hasAttachment;
   final String? attachmentName;
+  final bool removed;
 
   @override
   Widget build(BuildContext context) {
@@ -502,7 +590,9 @@ class _AttachmentEmptyPreview extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                hasAttachment
+                removed
+                    ? Icons.delete_outline_rounded
+                    : hasAttachment
                     ? Icons.insert_photo_rounded
                     : Icons.add_photo_alternate_rounded,
                 color: scheme.primary,
@@ -510,7 +600,11 @@ class _AttachmentEmptyPreview extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                hasAttachment ? 'Lampiran tersimpan' : 'Belum ada gambar',
+                removed
+                    ? 'Lampiran akan dihapus'
+                    : hasAttachment
+                    ? 'Lampiran tersimpan'
+                    : 'Belum ada gambar',
                 style: Theme.of(
                   context,
                 ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),

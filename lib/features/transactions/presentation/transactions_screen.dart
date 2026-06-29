@@ -206,7 +206,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
     for (final item in items) {
       final key = item.transactionDate == null
           ? 'Tanpa Tanggal'
-          : AppFormatters.displayDate(item.transactionDate!);
+          : _dateGroupLabel(item.transactionDate!);
       grouped.putIfAbsent(key, () => []).add(item);
     }
 
@@ -225,6 +225,19 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
         const SizedBox(height: 8),
       ],
     ];
+  }
+
+  String _dateGroupLabel(DateTime value) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final date = DateTime(value.year, value.month, value.day);
+    final difference = today.difference(date).inDays;
+
+    return switch (difference) {
+      0 => 'Hari Ini',
+      1 => 'Kemarin',
+      _ => AppFormatters.displayDate(value),
+    };
   }
 }
 
@@ -254,7 +267,7 @@ class _TransactionTile extends StatelessWidget {
           [
             item.account?.name,
             item.note,
-          ].whereType<String>().where((value) => value.isNotEmpty).join(' • '),
+          ].whereType<String>().where((value) => value.isNotEmpty).join(' | '),
         ),
         trailing: Text(
           AppFormatters.compactCurrency(isIncome ? item.amount : -item.amount),

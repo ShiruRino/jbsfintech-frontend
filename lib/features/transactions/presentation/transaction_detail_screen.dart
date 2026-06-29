@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/app_config.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/async_state_widgets.dart';
 import '../../shared/providers.dart';
@@ -72,7 +73,11 @@ class TransactionDetailScreen extends ConsumerWidget {
                         label: 'Catatan',
                         value: transaction.note ?? '-',
                       ),
-                      _AttachmentDetail(path: transaction.attachmentPath),
+                      _AttachmentDetail(
+                        path:
+                            transaction.attachmentUrl ??
+                            transaction.attachmentPath,
+                      ),
                     ],
                   ),
                 ),
@@ -129,8 +134,7 @@ class _AttachmentDetail extends StatelessWidget {
       return const _DetailRow(label: 'Lampiran', value: '-');
     }
 
-    final isNetworkImage =
-        path!.startsWith('http://') || path!.startsWith('https://');
+    final imageUrl = AppConfig.resolveStorageUrl(path);
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -139,13 +143,13 @@ class _AttachmentDetail extends StatelessWidget {
         children: [
           Text('Lampiran', style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 8),
-          if (isNetworkImage)
+          if (imageUrl != null)
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: AspectRatio(
                 aspectRatio: 16 / 9,
                 child: Image.network(
-                  path!,
+                  imageUrl,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
                       _AttachmentPathPill(path: path!),
